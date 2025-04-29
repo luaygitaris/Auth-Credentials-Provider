@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { prisma } from "@/lib/prisma"
 import { authOptions } from "@/lib/auth"
 
-export async function DELETE(req: Request, { params }: { params: { conversationId: string; messageId: string } }) {
+export async function DELETE(req: Request, context: { params: { conversationId: string; messageId: string } }) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -12,7 +12,7 @@ export async function DELETE(req: Request, { params }: { params: { conversationI
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const { conversationId, messageId } = params
+    const { conversationId, messageId } = context.params
 
     // Check if user is part of the conversation
     const conversation = await prisma.conversation.findFirst({
