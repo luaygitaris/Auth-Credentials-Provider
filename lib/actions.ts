@@ -5,7 +5,7 @@ import { hashSync } from 'bcrypt-ts';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { signIn } from '@/auth';
-import { AuthError } from 'next-auth';
+import AuthError from 'next-auth';
 
 export const signupCredentials = async (
 	prevState: unknown,
@@ -29,44 +29,87 @@ export const signupCredentials = async (
 			data: {
 				name,
 				email,
-				password: hashedPassword,
+				hashedPassword,
 			},
 		});
 	} catch (error) {
-		return { message: 'Failed to Register User!' };
+		return { message: 'Failed to Register User!', error: error };
 	}
 	redirect('/login');
 };
 
 // sign in credential action
+// export const signInCredentials = async (
+// 	prevState: unknown,
+// 	formData: FormData
+// ) => {
+// 	const validatedFields = SignInSchema.safeParse(
+// 		Object.fromEntries(formData.entries())
+// 	);
+
+// 	if (!validatedFields.success) {
+// 		return {
+// 			error: validatedFields.error.flatten().fieldErrors,
+// 		};
+// 	}
+
+// 	const { email, password } = validatedFields.data;
+
+// 	try {
+// 		await signIn('credentials', { email, password, redirectTo: '/dashboard' });
+// 	} catch (error) {
+// 		if (error instanceof AuthError) {
+// 			switch (error.type) {
+// 				case 'CredentialsSignin':
+// 					return { message: 'Invalid Credentials.' };
+
+// 				default:
+// 					return { message: 'Something went wrong.' };
+// 			}
+// 		}
+// 		throw error;
+// 	}
+// };
+
+
+
 export const signInCredentials = async (
-	prevState: unknown,
-	formData: FormData
+  prevState: unknown,
+  formData: FormData
 ) => {
-	const validatedFields = SignInSchema.safeParse(
-		Object.fromEntries(formData.entries())
-	);
+  // Validasi menggunakan Zod schema
+  const validatedFields = SignInSchema.safeParse(Object.fromEntries(formData.entries()));
 
-	if (!validatedFields.success) {
-		return {
-			error: validatedFields.error.flatten().fieldErrors,
-		};
-	}
+  // Jika validasi gagal, kembalikan error
+  if (!validatedFields.success) {
+    return {
+      error: validatedFields.error.flatten().fieldErrors,
+    };
+  }
 
-	const { email, password } = validatedFields.data;
+  const { email, password } = validatedFields.data;
 
-	try {
-		await signIn('credentials', { email, password, redirectTo: '/dashboard' });
-	} catch (error) {
-		if (error instanceof AuthError) {
-			switch (error.type) {
-				case 'CredentialsSignin':
-					return { message: 'Invalid Credentials.' };
+  try {
+    // Melakukan signIn menggunakan kredensial
+    const result = await signIn("credentials", { email, password, redirect: false });
 
-				default:
-					return { message: 'Something went wrong.' };
-			}
-		}
-		throw error;
-	}
+    // Jika error (misalnya, kredensial salah), kembalikan error
+    if (result?.error) {
+      return { error: { email: ['Invalid credentials'] } };
+    }
+
+    // Jika login berhasil, kembalikan sukses
+    return { message: "Successfully logged in" };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case 'CredentialsSignin':
+          return { error: { email: ['Invalid credentials'] } };
+        default:
+          return { error: { email: ['Something went wrong. Please try again.'] } };
+      }
+    }
+    throw error; // Lempar error lainnya
+  }
 };
+

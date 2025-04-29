@@ -1,9 +1,15 @@
+import { redirect } from "next/navigation"
+import getServerSession from "next-auth"
 
+import { authOptions } from "@/lib/auth"
+import LandingPage from "@/components/landing-page"
 
-export default function Home() {
-  return (
-    <div className="max-w-screen-xl mx-auto py-6 px-4">
-      <h1 className="text-2xl">Home Page</h1>
-    </div>
-  );
+export default async function Home() {
+  const session = await getServerSession(authOptions)
+
+  if (!session) {
+    redirect("/product")
+  }
+
+  return <LandingPage />
 }
