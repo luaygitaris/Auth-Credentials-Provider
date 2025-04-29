@@ -1,24 +1,22 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import type { NextRequest } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 
-type Params = {
-  params: {
-    conversationId: string;
-    messageId: string;
-  };
-};
-
-export async function DELETE(req: Request, context: Params) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { conversationId: string; messageId: string } }
+) {
   try {
     const session = await getServerSession(authOptions);
-    const { conversationId, messageId } = context.params;
 
     if (!session?.user) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
+
+    const { conversationId, messageId } = params;
 
     const conversation = await prisma.conversation.findFirst({
       where: {
